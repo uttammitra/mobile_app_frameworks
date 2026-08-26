@@ -23,19 +23,42 @@ export type NavItem = {
   submenu?: { title?: string; items?: NavItem[] };
 };
 
+export type NotificationItem = {
+  id: string;
+  title: string;
+  message: string;
+  sentAt?: string | null;
+  read?: boolean;
+  demo?: boolean;
+};
+
+export type BlankHome = {
+  bg?: string;
+  heading?: string;
+  subheading?: string;
+  overlay?: 'none' | 'light' | 'dark';
+  textPos?: number;
+  headingColor?: string;
+  subColor?: string;
+};
+
 export type AppConfig = {
   app: { id?: string; name: string; bundleId: string; logo?: string; icon?: string };
+  design?: Record<string, any>;
   theme: Record<string, any>;
   splash?: Record<string, any>;
   navigation?: {
     style?: string;
     maxVisible?: number;
     moreLabel?: string;
+    moreIcon?: string;
     items?: NavItem[];
     appBarButtons?: any[];
+    notificationBell?: boolean;
   };
-  home?: { layout?: string; html?: string; sections?: any[] };
+  home?: { layout?: string; html?: string; sections?: any[]; blank?: BlankHome };
   pages?: Array<{ slug: string; title: string; type: string; html?: string; url?: string }>;
+  notifications?: { enabled?: boolean; source?: string; history?: NotificationItem[] };
   onesignal?: { appId?: string };
   permissions?: Record<string, any>;
   webview?: Record<string, any>;

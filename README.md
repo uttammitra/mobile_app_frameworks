@@ -64,3 +64,25 @@ EATAPP_BUNDLE_ID=com.company.bkstakeaway npx expo start -c
 - Only `app.config.js` exists — delete any leftover `app.config.ts`.
 - `eas.json` pins Node `20.19.4` and iOS image `latest` (Xcode 26) so App Store Connect
   stops rejecting uploads with ITMS-90725.
+
+## v13 changes
+
+* **App bar is now 100% CMS-driven** — `design.template` (`appbar|tabs|drawer|none`),
+  `design.showTitle`, `theme.appBar` / `theme.appBarText` (auto-contrast from
+  `theme.primary`), app name/logo and every entry in
+  `navigation.appBarButtons[]` (the notification bell is always first).
+* **Notification centre** — new `/notifications` screen renders
+  `notifications.history[]` (real OneSignal deliveries returned by the CMS),
+  with relative timestamps and pull-to-refresh.
+* **External links fixed** — the CMS returns external targets in `route`
+  (not `url`), which previously routed to `/p/<https:/...>` and showed
+  “This page is not available yet.” All navigation now goes through
+  `src/nav.ts`, which opens `http(s)` targets in the in-app WebView,
+  `tel:`/`mailto:`/`sms:` in the OS handler, and everything else as a page.
+  `UrlView` gained cookies, pull-to-refresh, loading indicator and an
+  “Open in browser” fallback.
+* **Home “blank” layout** — supports `home.blank.{bg, heading, subheading,
+  overlay, textPos, headingColor, subColor}` including the vertical text
+  position slider and per-text colours.
+* **Fonts** — `theme.fontFamily` is applied to native text (tab bar / app bar)
+  and `theme.fontStack` inside every WebView, so app and dashboard match.

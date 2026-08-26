@@ -1,17 +1,43 @@
-import { AppConfig } from './config';
+import { AppConfig, BlankHome } from './config';
 
-const esc = (v: unknown) => String(v ?? '').replace(/[<>]/g, '');
+const esc = (v: unknown) =>
+  String(v ?? '').replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>
+  )[c]!);
+
+/** Blank Canvas layout — background image + optional heading/subheading with
+ *  vertical position (`textPos`, 0 = top, 100 = bottom) and custom colours. */
+export function blankHtml(input: BlankHome | undefined | null): string {
+  const b = input ?? {};
+  const pos = Number(b.textPos);
+  const textPos = Number.isFinite(pos) ? Math.min(100, Math.max(0, pos)) : 50;
+  const overlay =
+    b.overlay === 'dark' ? 'rgba(0,0,0,.4)' : b.overlay === 'light' ? 'rgba(255,255,255,.4)' : 'transparent';
+  const bg = b.bg ? `url('${b.bg}') center/cover no-repeat` : 'var(--background)';
+  const headingColor = b.headingColor || '#FFFFFF';
+  const subColor = b.subColor || '#FFFFFF';
+
+  return `<section style="position:relative;min-height:100vh;background:${bg};text-align:center;overflow:hidden">
+  <div style="position:absolute;inset:0;background:${overlay}"></div>
+  <div style="position:absolute;left:0;right:0;top:${textPos}%;transform:translateY(-50%);padding:24px">
+    ${b.heading ? `<h1 style="font-size:32px;margin:0 0 8px;font-weight:700;color:${esc(headingColor)}">${esc(b.heading)}</h1>` : ''}
+    ${b.subheading ? `<p style="font-size:16px;margin:0;opacity:.95;color:${esc(subColor)}">${esc(b.subheading)}</p>` : ''}
+  </div>
+</section>`;
+}
 
 /**
- * Builds the home screen HTML. The CMS may send ready-made `home.html`; if it
- * only sends `sections[]`, they are rendered with the same markup the
- * dashboard preview uses.
+ * Builds the home screen HTML. The CMS usually sends ready-made `home.html`;
+ * `blank` and `sections[]` are rendered locally as a fallback so the app still
+ * matches the dashboard preview when only structured data arrives.
  */
 export function homeHtml(config: AppConfig | null): string {
-  const home = config?.home ?? {};
-  if (typeof (home as any).html === 'string' && (home as any).html.trim()) {
-    return (home as any).html as string;
-  }
+  const home = (config?.home ?? {}) as any;
+
+  if (home.layout === 'blank' && home.blank) return blankHtml(home.blank);
+  if (typeof home.html === 'string' && home.html.trim()) return home.html as string;
+  if (home.blank) return blankHtml(home.blank);
+
   const sections = Array.isArray(home.sections) ? home.sections : [];
   if (!sections.length) {
     return `<div style="padding:48px 20px;text-align:center;color:var(--text-secondary)">

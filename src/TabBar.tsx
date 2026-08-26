@@ -5,17 +5,8 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavItem } from './config';
 import { useConfig, useTheme } from './ConfigProvider';
-
-/** CMS icon names (lucide-ish) → Ionicons. */
-const ICONS: Record<string, string> = {
-  Home: 'home', Menu: 'restaurant', ShoppingBag: 'bag', ShoppingCart: 'cart',
-  MapPin: 'location', Phone: 'call', Mail: 'mail', Image: 'images', Camera: 'camera',
-  Calendar: 'calendar', Star: 'star', Heart: 'heart', User: 'person', Users: 'people',
-  Settings: 'settings', Info: 'information-circle', Gift: 'gift', Tag: 'pricetag',
-  Clock: 'time', Globe: 'globe', Search: 'search', Bell: 'notifications',
-  MoreHorizontal: 'ellipsis-horizontal', Utensils: 'restaurant', Truck: 'car',
-};
-const ion = (name?: string) => (ICONS[name ?? ''] ?? 'ellipse-outline') as any;
+import { ion } from './icons';
+import { isExternalUrl, openNavTarget } from './nav';
 
 export function TabBar() {
   const { config } = useConfig();
@@ -40,20 +31,19 @@ export function TabBar() {
       setSheet({ title: item.submenu?.title ?? item.label, items: children });
       return;
     }
-    if (item.action === 'external' && item.url) {
-      router.push({ pathname: '/web', params: { url: item.url, title: item.label } });
-      return;
-    }
-    const route = item.route ?? '/';
-    if (route === '/') router.push('/');
-    else router.push({ pathname: '/p/[slug]', params: { slug: route.replace(/^\//, '') } });
+    openNavTarget(router, item);
+  };
+
+  const routeActive = (item: NavItem) => {
+    const target = String(item.url || item.route || '/');
+    if (isExternalUrl(target)) return pathname.startsWith('/web');
+    return target === '/' ? pathname === '/' : pathname.endsWith(target);
   };
 
   const isActive = (item: NavItem) => {
     const children = item.children ?? item.submenu?.items ?? [];
-    if (children.length) return children.some((c) => c.route && pathname.endsWith(c.route));
-    const route = item.route ?? '/';
-    return route === '/' ? pathname === '/' : pathname.endsWith(route);
+    if (children.length) return children.some(routeActive);
+    return routeActive(item);
   };
 
   const cell = (item: NavItem, key: string) => {
@@ -61,14 +51,13 @@ export function TabBar() {
     const group = item.isGroup || item.action === 'group';
     return (
       <Pressable key={key} style={styles.tab} onPress={() => go(item)}>
-        <Ionicons
-          name={ion(item.icon)}
-          size={22}
-          color={active ? theme.tabActive : theme.tabInactive}
-        />
+        <Ionicons name={ion(item.icon)} size={22} color={active ? theme.tabActive : theme.tabInactive} />
         <Text
           numberOfLines={1}
-          style={[styles.tabLabel, { color: active ? theme.tabActive : theme.tabInactive }]}
+          style={[
+            styles.tabLabel,
+            { color: active ? theme.tabActive : theme.tabInactive, fontFamily: theme.fontFamilyRN },
+          ]}
         >
           {item.label}
           {group ? ' ›' : ''}
@@ -95,7 +84,7 @@ export function TabBar() {
             {
               id: '__more',
               label: nav.moreLabel ?? 'More',
-              icon: 'MoreHorizontal',
+              icon: nav.moreIcon ?? 'MoreHorizontal',
               isGroup: true,
               children: overflow,
             },
@@ -106,10 +95,7 @@ export function TabBar() {
       <Modal visible={!!sheet} transparent animationType="slide" onRequestClose={() => setSheet(null)}>
         <Pressable style={styles.backdrop} onPress={() => setSheet(null)} />
         <View
-          style={[
-            styles.sheet,
-            { backgroundColor: theme.card, paddingBottom: Math.max(insets.bottom, 16) },
-          ]}
+          style={[styles.sheet, { backgroundColor: theme.card, paddingBottom: Math.max(insets.bottom, 16) }]}
         >
           <View style={[styles.grabber, { backgroundColor: theme.border }]} />
           <Text style={[styles.sheetTitle, { color: theme.text }]}>{sheet?.title}</Text>
@@ -137,18 +123,27 @@ export function TabBar() {
 
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8 },
-  tab: { flex: 1, alignItems: 'center', gap: 3 },
+  tab: { flex: 1, alignItems: 'center', gap: 3, paddingHorizontal: 4 },
   tabLabel: { fontSize: 11, fontWeight: '600' },
   backdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.45)' },
   sheet: {
-    position: 'absolute', left: 0, right: 0, bottom: 0,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, maxHeight: '70%',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    maxHeight: '70%',
   },
   grabber: { alignSelf: 'center', width: 42, height: 4, borderRadius: 2, marginBottom: 12 },
   sheetTitle: { fontSize: 17, fontWeight: '700', marginBottom: 8 },
   row: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   rowLabel: { flex: 1, fontSize: 15, fontWeight: '500' },
 });
