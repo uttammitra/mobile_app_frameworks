@@ -40,7 +40,7 @@ export function HtmlView({ html }: { html: string }) {
   return (
     <WebView
       originWhitelist={['*']}
-      source={{ html: doc, baseUrl: 'https://mobileforge-studio.lovable.app' }}
+      source={{ html: doc, baseUrl: '' }}
       style={[styles.web, { backgroundColor: theme.background }]}
       javaScriptEnabled
       domStorageEnabled
@@ -48,7 +48,9 @@ export function HtmlView({ html }: { html: string }) {
       allowsInlineMediaPlayback
       mediaPlaybackRequiresUserAction={false}
       onShouldStartLoadWithRequest={(req) => {
-        if (req.url === 'about:blank' || req.url.startsWith('data:')) return true;
+        if (req.url === 'about:blank' || req.url.startsWith('data:') || req.url.startsWith('file:')) return true;
+        // Never let the CMS/API host itself be opened as a page (it requires a login).
+        if (/mobileforge-studio\.lovable\.app/i.test(req.url)) return false;
         if (/^(tel:|mailto:|sms:)/i.test(req.url)) {
           Linking.openURL(req.url).catch(() => {});
           return false;

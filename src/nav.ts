@@ -1,6 +1,8 @@
 import { Linking } from 'react-native';
 import type { NavItem } from './config';
 
+export const isCmsHost = (v?: string | null) => !!v && /mobileforge-studio\.lovable\.app/i.test(v);
+
 export const isExternalUrl = (v?: string | null) => !!v && /^https?:\/\//i.test(v);
 
 /**
@@ -14,7 +16,7 @@ export function openNavTarget(
 ) {
   const target = String(item.url || item.route || '').trim();
 
-  if (isExternalUrl(target)) {
+  if (isExternalUrl(target) && !isCmsHost(target)) {
     router.push({ pathname: '/web', params: { url: target, title: item.label ?? '' } });
     return;
   }
