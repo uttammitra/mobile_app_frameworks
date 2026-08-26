@@ -1,60 +1,66 @@
-# EatApp Framework v11 — clean React Native / Expo repo
+# EatApp mobile framework — v12
 
-One repo builds **every** app in the EatApp CMS. Nothing here is per-customer:
-the bundle ID, EAS project ID, version and build number arrive as workflow
-inputs from the CMS, and all content/branding is fetched from the CMS API at
-build time and at runtime.
+One repo builds **every** app in the EatApp CMS. You never edit anything here per app.
 
-## Setup (once)
+## Setup (once, ~2 minutes)
 
-```bash
-# in an EMPTY repo folder — copy every file from this zip in, then:
-rm -rf node_modules package-lock.json yarn.lock ios android
-npm install
-git add -A && git commit -m "EatApp framework v11" && git push
-```
+1. Create an **empty** GitHub repo and copy every file from this zip into it.
+2. Commit and push. **Do not run `npm install` locally.** You do not need node_modules,
+   an `.env` file, or the EAS CLI on your Mac.
+3. In [expo.dev](https://expo.dev) → your project → **GitHub** → connect this repository.
+   Leave **Base directory** blank (not `/`).
+4. Go to the EatApp CMS → an app → **Save & Publish**. The CMS dispatches the workflow,
+   Expo checks out this repo, and everything else is automatic.
 
-Do **not** commit `package-lock.json` (it is gitignored on purpose). Without a
-lockfile EAS runs `npm install` instead of `npm ci`, so the
-`npm ci ... EUSAGE / Missing: ... from lock file` and `ERESOLVE` build
-failures cannot happen again.
+That's it. No local install step exists, so there are no local dependency errors.
 
-Then in Expo: link this GitHub repo to each EAS project (Project → GitHub →
-Connect). Nothing else per app.
+## Why installs used to fail
 
-## Local commands (only if you want to run it on your Mac)
+- **No `package-lock.json` is committed** (it's in `.gitignore`). EAS therefore runs
+  `npm install` instead of `npm ci`, so a stale lockfile can never produce
+  `npm error code EUSAGE` / `Missing: … from lock file` again.
+- **`.npmrc` sets `legacy-peer-deps=true`**, which absorbs the OneSignal / expo-font
+  peer conflicts that caused `ERESOLVE could not resolve`.
+- Dependency versions are pinned to exactly what Expo SDK 54 expects
+  (`npx expo install --check` reports "Dependencies are up to date").
 
-```bash
-EATAPP_BUNDLE_ID=com.company.bkstakeaway \
-EAS_PROJECT_ID=30c33451-038d-41b2-b1f6-7cf4f2cd6d8d \
-npx expo start
-```
+## Why `expo` commands no longer crash
 
-Never create `app.config.ts` — only `app.config.js` exists here, on purpose.
+`app.config.js` used to throw when the CMS config wasn't reachable, which broke
+`expo config`, `expo install --fix` and Expo's GitHub integration with
+`No EAS project id for bundle "app.eatapp.demo"`.
 
-## What each file does
+It now degrades gracefully: without `EATAPP_BUNDLE_ID` it produces a valid generic
+config, and it only demands an EAS project id while actually running on EAS Build.
 
-| File | Purpose |
+## How a build gets its data
+
+The CMS dispatches `.eas/workflows/build-ios.yml` / `build-android.yml` with inputs:
+
+| input | example |
 | --- | --- |
-| `app.config.js` | Builds the native config from the CMS payload: name, slug, icon, splash, bundle id, version/build number, permissions, OneSignal, `extra.eas.projectId`. |
-| `scripts/fetch-config.js` | Runs before install/build, downloads the app's config + icon + splash into `assets/`. |
-| `eas.json` | Node 20.19.4, `image: latest` (Xcode 26 / iOS 26 SDK — fixes ITMS‑90725), `appVersionSource: local` so the CMS-calculated version wins. |
-| `.eas/workflows/*.yml` | Accept `bundle_id`, `eas_project_id`, `app_version`, `build_number` from the CMS and export them as env. |
-| `app/` | expo-router screens: home, dynamic CMS page, external web view. |
-| `src/` | Config loader + cache, theme, HTML renderer (same font stack as the dashboard preview), tab bar with parent/child drawer submenus. |
-| `.npmrc` | `legacy-peer-deps=true` so peer warnings never fail installs. |
+| `bundle_id` | `com.company.bkstakeaway` |
+| `eas_project_id` | `30c33451-…` |
+| `app_version` | `7.0.2` |
+| `build_number` | `53` |
 
-## Versions
+`scripts/fetch-config.js` then pulls `/api/public/apps/config` for that bundle and writes
+`assets/config/app.json` plus the downloaded icon/splash images. `app.config.js` reads
+those to produce the name, slug, bundle id, version, build number, permissions,
+OneSignal plugin and splash screen. At runtime `src/config.ts` re-fetches the same
+endpoint so content changes appear without a rebuild.
 
-Expo SDK 54 · React Native 0.81.4 · React 19.1 · Node 20.19.4 — all pinned to
-one consistent set. Do not run `npx expo install --fix` against a newer
-canary; it is what pulled in react-native 0.86 and broke the lockfile.
+## Optional: running it locally
 
-## Runtime behaviour
+Only if you want the Expo Go preview:
 
-1. Renders instantly from the AsyncStorage cache (or the config bundled at build time).
-2. Fetches `/api/public/apps/config` with `X-App-Bundle` + `If-None-Match`.
-3. Hot-reloads theme, navigation, home and pages when the payload changes — no rebuild for content edits.
-4. Registers OneSignal with `onesignal.appId` from the config.
+```bash
+npm install
+EATAPP_BUNDLE_ID=com.company.bkstakeaway npx expo start -c
+```
 
-Rebuild only when bundle ID, permissions, icon, splash or certificates change.
+## Notes
+
+- Only `app.config.js` exists — delete any leftover `app.config.ts`.
+- `eas.json` pins Node `20.19.4` and iOS image `latest` (Xcode 26) so App Store Connect
+  stops rejecting uploads with ITMS-90725.

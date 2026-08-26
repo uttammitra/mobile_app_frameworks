@@ -1,0 +1,23 @@
+name: build-android
+
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_id:      { type: string, required: true,  description: EatApp bundle id (sent by the CMS) }
+      eas_project_id: { type: string, required: false, description: EAS project id for this app }
+      app_version:    { type: string, required: false, description: versionName from the CMS }
+      build_number:   { type: string, required: false, description: versionCode from the CMS }
+
+jobs:
+  build:
+    name: EAS Build (Android)
+    type: build
+    env:
+      EATAPP_BUNDLE_ID: ${{ inputs.bundle_id }}
+      EAS_PROJECT_ID: ${{ inputs.eas_project_id }}
+      EATAPP_VERSION: ${{ inputs.app_version }}
+      EATAPP_BUILD_NUMBER: ${{ inputs.build_number }}
+      EATAPP_STRICT_CONFIG: '1'
+    params:
+      platform: android
+      profile: production

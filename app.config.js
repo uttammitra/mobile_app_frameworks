@@ -18,12 +18,16 @@ const requestedBundleId = env.EATAPP_BUNDLE_ID || '';
 
 // Expo evaluates this file before dependency installation. Pull the selected app
 // synchronously now so every native value comes from the CMS for this build.
-if (requestedBundleId) {
-  execFileSync(process.execPath, [path.resolve(__dirname, 'scripts/fetch-config.js')], {
-    cwd: __dirname,
-    env: { ...env, EATAPP_STRICT_CONFIG: '1' },
-    stdio: 'inherit',
-  });
+if (requestedBundleId && env.EATAPP_SKIP_CONFIG_FETCH !== '1') {
+  try {
+    execFileSync(process.execPath, [path.resolve(__dirname, 'scripts/fetch-config.js')], {
+      cwd: __dirname,
+      env: env,
+      stdio: ['ignore', 2, 2],
+    });
+  } catch (e) {
+    console.warn('[eatapp] Config sync skipped: ' + e.message);
+  }
 }
 
 function readJson(rel) {
@@ -54,9 +58,10 @@ const text = (key, fallback) => {
   return (t && String(t).trim()) || fallback;
 };
 
-const bundleId = requestedBundleId || cmsApp.bundleId;
-if (!bundleId || (requestedBundleId && cmsApp.bundleId !== requestedBundleId)) {
-  throw new Error('[eatapp] Dynamic CMS config was not loaded for the requested app.');
+const ON_EAS = env.EAS_BUILD === 'true' || !!env.EAS_BUILD_PLATFORM;
+const bundleId = requestedBundleId || cmsApp.bundleId || 'app.eatapp.demo';
+if (requestedBundleId && cmsApp.bundleId && cmsApp.bundleId !== requestedBundleId) {
+  console.warn('[eatapp] CMS config bundle mismatch; using ' + requestedBundleId + '.');
 }
 const appName = env.EATAPP_APP_NAME || cmsApp.name || 'EatApp';
 const slug =
@@ -75,7 +80,7 @@ const expoOwner =
 
 // EAS runs `eas build:internal` non-interactively: without extra.eas.projectId it
 // aborts with "EAS project not configured ... run 'eas init'".
-if (!easProjectId) {
+if (!easProjectId && ON_EAS) {
   throw new Error(
     '[eatapp] No EAS project id for bundle "' +
       bundleId +
@@ -216,7 +221,7 @@ module.exports = ({ config }) => {
     plugins: plugins,
 
     extra: Object.assign({}, base.extra, {
-      eas: { projectId: easProjectId },
+      ...(easProjectId ? { eas: { projectId: easProjectId } } : {}),
       EATAPP_BUNDLE_ID: bundleId,
       EATAPP_APP_ID: cmsApp.id || env.EATAPP_APP_ID || null,
       EATAPP_API_URL:

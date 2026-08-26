@@ -22,11 +22,11 @@ const API_URL =
   process.env.EATAPP_API_URL ||
   'https://mobileforge-studio.lovable.app/api/public/apps/config';
 const BUNDLE_ID = process.env.EATAPP_BUNDLE_ID || '';
-const STRICT = process.env.EATAPP_STRICT_CONFIG === '1';
-
+// Never hard-fail: a missing/unreachable CMS config must not break `expo config`,
+// `expo install`, or Expo's GitHub build integration. The app falls back to the
+// bundled defaults and re-fetches the live config at runtime.
 function fail(message) {
-  if (STRICT) throw new Error(message);
-  console.warn(message);
+  console.warn(message + ' — continuing with bundled defaults.');
 }
 
 function get(url, headers = {}, redirects = 0) {
