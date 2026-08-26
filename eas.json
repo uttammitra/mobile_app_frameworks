@@ -1,0 +1,39 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "base": {
+      "node": "20.19.4",
+      "env": {
+        "EATAPP_API_URL": "https://mobileforge-studio.lovable.app/api/public/apps/config"
+      },
+      "ios": { "image": "latest" },
+      "android": { "image": "latest" }
+    },
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": { "image": "latest", "simulator": true },
+      "android": { "image": "latest", "buildType": "apk" }
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "ios": { "image": "latest" },
+      "android": { "image": "latest", "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "ios": { "image": "latest", "resourceClass": "m-medium" },
+      "android": { "image": "latest", "buildType": "app-bundle" }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": { "track": "internal", "releaseStatus": "completed" }
+    }
+  }
+}
