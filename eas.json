@@ -7,7 +7,8 @@
     "base": {
       "node": "20.19.4",
       "env": {
-        "EATAPP_API_URL": "https://mobileforge-studio.lovable.app/api/public/apps/config"
+        "EATAPP_API_URL": "https://mobileforge-studio.lovable.app/api/public/apps/config",
+        "EXPO_NO_CAPABILITY_SYNC": "1"
       },
       "ios": { "image": "latest" },
       "android": { "image": "latest" }
