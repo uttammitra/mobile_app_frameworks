@@ -1,6 +1,6 @@
 {
   "name": "eatapp-framework",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "private": true,
   "main": "expo-router/entry",
   "engines": {
@@ -19,6 +19,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~54.0.37",
     "expo-asset": "~12.0.7",
+    "expo-build-properties": "~1.0.10",
     "expo-constants": "~18.0.8",
     "expo-font": "~14.0.8",
     "expo-linking": "~8.0.8",

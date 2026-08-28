@@ -130,3 +130,19 @@ does not match the "slug" field (eatapp).
 
 `app.config.js` uses `EATAPP_SLUG` for `slug` and `EAS_PROJECT_ID` for
 `extra.eas.projectId`, so the two always agree and the slug mismatch cannot occur.
+
+## Android target API level (Google Play requirement)
+
+Google Play requires apps to target **Android 16 (API level 36)** or higher.
+`app.config.js` includes the `expo-build-properties` plugin which pins:
+
+```
+compileSdkVersion: 36
+targetSdkVersion: 36
+buildToolsVersion: '36.0.0'
+minSdkVersion: 24
+```
+
+After replacing the framework, run `npm install` (adds `expo-build-properties`),
+commit, push, then start a new Android build from the CMS. Test with an internal
+track release before promoting to production.

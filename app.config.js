@@ -115,6 +115,19 @@ const splashColor = splash.backgroundColor || theme.primary || '#111827';
 
 const plugins = ['expo-router'];
 
+// Google Play requires apps to target Android 16 (API 36) or higher.
+plugins.push([
+  'expo-build-properties',
+  {
+    android: {
+      compileSdkVersion: 36,
+      targetSdkVersion: 36,
+      buildToolsVersion: '36.0.0',
+      minSdkVersion: 24,
+    },
+  },
+]);
+
 if (oneSignalAppId) {
   plugins.push(['onesignal-expo-plugin', { mode: env.EATAPP_ONESIGNAL_MODE || 'production' }]);
 }
