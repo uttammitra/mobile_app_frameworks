@@ -1,4 +1,4 @@
-# EatApp mobile framework — v12
+# EatApp mobile framework — v17
 
 One repo builds **every** app in the EatApp CMS. You never edit anything here per app.
 
@@ -86,3 +86,47 @@ EATAPP_BUNDLE_ID=com.company.bkstakeaway npx expo start -c
   position slider and per-text colours.
 * **Fonts** — `theme.fontFamily` is applied to native text (tab bar / app bar)
   and `theme.fontStack` inside every WebView, so app and dashboard match.
+
+
+## v16 — linked EAS project identity
+
+The build workflows now require and pass both `eas_project_id` and `expo_slug`.
+`app.config.js` uses that authoritative slug and stops immediately when a linked
+EAS build is missing it, preventing errors such as project slug `bkstakeaway`
+being built with the repository fallback slug `eatapp`. Replace both files in
+`.eas/workflows/` when upgrading an existing repository.
+
+
+## Separate Expo projects for iOS and Android (v17)
+
+Android often lives in its own Expo project with its **own slug and project ID**
+(for example iOS `bkstakeaway`, Android `bkstakeaway-android`). EAS rejects a build
+when `slug` does not match the slug of the project referenced by `extra.eas.projectId`,
+which is what caused:
+
+```
+Project config: Slug for project identified by "extra.eas.projectId" (bkstakeaway)
+does not match the "slug" field (eatapp).
+```
+
+### How to configure it
+
+1. In the CMS open **App → Store & Submission → Android**.
+2. Fill **Package name** (the Android application id — it may differ from the iOS bundle id).
+3. Fill **Android EAS project ID (optional)** with the Expo project ID used for Android.
+   Leave it empty to reuse the app-wide EAS project.
+4. Click **Check slug** — the CMS asks Expo for that project and shows the real slug.
+5. Save. Every Android build/submit now uses that project ID and its slug; iOS keeps
+   using the app-wide project.
+
+### What the workflow receives
+
+| input | iOS | Android |
+| --- | --- | --- |
+| `bundle_id` | `apps.bundle_id` | Android **package name** |
+| `eas_project_id` | app-wide EAS project | Android EAS project (falls back to app-wide) |
+| `expo_slug` | slug of the iOS project | slug of the Android project |
+| `app_version` / `build_number` | resolved by the CMS | resolved by the CMS |
+
+`app.config.js` uses `EATAPP_SLUG` for `slug` and `EAS_PROJECT_ID` for
+`extra.eas.projectId`, so the two always agree and the slug mismatch cannot occur.

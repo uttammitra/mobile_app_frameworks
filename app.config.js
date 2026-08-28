@@ -64,8 +64,9 @@ if (requestedBundleId && cmsApp.bundleId && cmsApp.bundleId !== requestedBundleI
   console.warn('[eatapp] CMS config bundle mismatch; using ' + requestedBundleId + '.');
 }
 const appName = env.EATAPP_APP_NAME || cmsApp.name || 'EatApp';
+const linkedExpoSlug = env.EATAPP_SLUG || cmsApp.expoSlug || '';
 const slug =
-  env.EATAPP_SLUG ||
+  linkedExpoSlug ||
   cmsApp.slug ||
   appName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') ||
   'eatapp';
@@ -80,6 +81,14 @@ const expoOwner =
 
 // EAS runs `eas build:internal` non-interactively: without extra.eas.projectId it
 // aborts with "EAS project not configured ... run 'eas init'".
+if (easProjectId && ON_EAS && !linkedExpoSlug) {
+  throw new Error(
+    '[eatapp] No Expo slug was supplied for linked EAS project "' +
+      easProjectId +
+      '". The CMS workflow must pass EATAPP_SLUG.',
+  );
+}
+
 if (!easProjectId && ON_EAS) {
   throw new Error(
     '[eatapp] No EAS project id for bundle "' +
