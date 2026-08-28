@@ -146,3 +146,22 @@ minSdkVersion: 24
 After replacing the framework, run `npm install` (adds `expo-build-properties`),
 commit, push, then start a new Android build from the CMS. Test with an internal
 track release before promoting to production.
+
+## Downloading a testable APK (no Play Store)
+
+The `preview` build profile produces an installable **APK** with internal
+distribution. A dedicated workflow ships at
+`.eas/workflows/build-android-apk.yml` (same inputs as `build-android.yml`,
+but `profile: preview`).
+
+From the CMS: **App → Builds → EAS live connection → Build Android APK (test)**.
+When the build finishes, use the **Download** button in the Builds-on-EAS table
+(or the EAS build page) to get the `.apk`, then sideload it on any Android
+device (`adb install app.apk` or open the link on the phone).
+
+Notes
+- The APK is signed with the same EAS keystore, so OneSignal push and Google
+  Maps work exactly as in the store build, provided your Maps API key allows
+  the EAS debug/release SHA-1.
+- Play Store releases keep using `build-android.yml` (`profile: production`,
+  AAB).

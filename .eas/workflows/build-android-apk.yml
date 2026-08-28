@@ -1,0 +1,27 @@
+name: build-android-apk
+
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_id:      { type: string, required: true,  description: EatApp bundle id (sent by the CMS) }
+      eas_project_id: { type: string, required: true,  description: EAS project id for this app }
+      expo_slug:      { type: string, required: true,  description: Slug of the linked Expo project }
+      app_version:    { type: string, required: false, description: versionName from the CMS }
+      build_number:   { type: string, required: false, description: versionCode from the CMS }
+
+jobs:
+  build:
+    name: EAS Build (Android APK — internal test)
+    type: build
+    env:
+      EATAPP_BUNDLE_ID: ${{ inputs.bundle_id }}
+      EAS_PROJECT_ID: ${{ inputs.eas_project_id }}
+      EATAPP_EAS_PROJECT_ID: ${{ inputs.eas_project_id }}
+      EATAPP_SLUG: ${{ inputs.expo_slug }}
+      EAS_BUILD_NO_EXPO_GO_WARNING: 'true'
+      EATAPP_VERSION: ${{ inputs.app_version }}
+      EATAPP_BUILD_NUMBER: ${{ inputs.build_number }}
+      EATAPP_STRICT_CONFIG: '1'
+    params:
+      platform: android
+      profile: preview
