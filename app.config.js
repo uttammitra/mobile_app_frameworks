@@ -59,11 +59,19 @@ const text = (key, fallback) => {
 };
 
 const ON_EAS = env.EAS_BUILD === 'true' || !!env.EAS_BUILD_PLATFORM;
+const ON_EAS_STRICT = ON_EAS && env.EATAPP_STRICT_CONFIG === '1';
 const bundleId = requestedBundleId || cmsApp.bundleId || 'app.eatapp.demo';
 if (requestedBundleId && cmsApp.bundleId && cmsApp.bundleId !== requestedBundleId) {
   console.warn('[eatapp] CMS config bundle mismatch; using ' + requestedBundleId + '.');
 }
 const appName = env.EATAPP_APP_NAME || cmsApp.name || 'EatApp';
+if (ON_EAS_STRICT && (!cmsApp.name || !exists('assets/generated/icon.png'))) {
+  throw new Error(
+    '[eatapp] CMS config/icon missing for bundle "' +
+      bundleId +
+      '" — refusing to build with the generic EatApp name and placeholder icon.',
+  );
+}
 const linkedExpoSlug = env.EATAPP_SLUG || cmsApp.expoSlug || '';
 const slug =
   linkedExpoSlug ||
@@ -227,7 +235,7 @@ module.exports = ({ config }) => {
     }),
 
     android: Object.assign({}, baseAndroid, {
-      package: bundleId,
+      package: env.EATAPP_ANDROID_PACKAGE || cmsApp.androidPackage || bundleId,
       versionCode: Number(buildNumber) || 1,
       permissions: androidPermissions,
       ...(icon

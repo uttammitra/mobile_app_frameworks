@@ -25,7 +25,13 @@ const BUNDLE_ID = process.env.EATAPP_BUNDLE_ID || '';
 // Never hard-fail: a missing/unreachable CMS config must not break `expo config`,
 // `expo install`, or Expo's GitHub build integration. The app falls back to the
 // bundled defaults and re-fetches the live config at runtime.
+const STRICT = process.env.EATAPP_STRICT_CONFIG === '1';
 function fail(message) {
+  if (STRICT) {
+    // A strict (CMS-dispatched) build must never silently ship the generic
+    // "EatApp" name and placeholder icon.
+    throw new Error(message);
+  }
   console.warn(message + ' — continuing with bundled defaults.');
 }
 
@@ -90,7 +96,12 @@ async function download(url, dest) {
     return;
   }
 
-  if (config.app.bundleId !== BUNDLE_ID) {
+  // Android normally ships under a different application id than iOS, so the
+  // CMS payload may legitimately report the iOS bundle id for an Android build.
+  const ids = [config.app.bundleId, config.app.androidPackage]
+    .filter(Boolean)
+    .map((v) => String(v).toLowerCase());
+  if (!ids.includes(BUNDLE_ID.toLowerCase())) {
     fail(`[eatapp] CMS returned ${config.app.bundleId} instead of ${BUNDLE_ID}.`);
     return;
   }
@@ -125,5 +136,15 @@ async function download(url, dest) {
       2,
     ),
   );
+  if (STRICT && !wrote.icon) {
+    throw new Error(
+      '[eatapp] No app icon could be downloaded from the CMS for ' +
+        BUNDLE_ID +
+        ' — upload an icon in the CMS (App -> Icon) before building.',
+    );
+  }
   console.log('[eatapp] Assets:', Object.entries(wrote).filter(([, v]) => v).map(([k]) => k).join(', ') || 'none');
-})();
+})().catch((err) => {
+  console.error(err.message || String(err));
+  process.exit(1);
+});

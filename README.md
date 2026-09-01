@@ -165,3 +165,21 @@ Notes
   the EAS debug/release SHA-1.
 - Play Store releases keep using `build-android.yml` (`profile: production`,
   AAB).
+
+## v20 — Android app name & icon fix
+
+Android builds use a different application id than iOS, and the previous
+build-time config sync aborted when the CMS payload reported the iOS bundle id.
+That silently shipped the generic **EatApp** name and the placeholder icon.
+
+v20 changes:
+
+- `scripts/fetch-config.js` accepts the CMS payload when the requested id matches
+  either `app.bundleId` (iOS) or the new `app.androidPackage` (Android).
+- With `EATAPP_STRICT_CONFIG=1` (set by every CMS workflow) the build now **fails
+  loudly** instead of falling back to the generic name/icon, including when no
+  icon could be downloaded.
+- `app.config.js` resolves the Android `package` from `EATAPP_ANDROID_PACKAGE` or
+  `app.androidPackage` before falling back to the requested bundle id.
+
+Upload your icon in the CMS (App → Icon) before building.
