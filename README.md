@@ -183,3 +183,30 @@ v20 changes:
   `app.androidPackage` before falling back to the requested bundle id.
 
 Upload your icon in the CMS (App → Icon) before building.
+
+
+## v21 — Google Play photo/video permission fix
+
+`fastlane supply` fails with *"All developers requesting access to the photo and
+video permissions are required to tell Google Play about the core functionality
+of their app"* when the AAB declares `READ_MEDIA_IMAGES` / `READ_EXTERNAL_STORAGE`.
+
+v21 only adds those permissions when **Photos** or **Storage** is switched on in
+the CMS (App -> Permissions). When they are off, the same permissions are listed
+under `android.blockedPermissions`, so third-party libraries cannot re-inject
+them into the merged manifest.
+
+If your app genuinely needs photo access, keep the permission on and complete
+Play Console -> Policy -> App content -> **Photo and Video Permissions**
+declaration once; then resubmit.
+
+## v22 — no header jump + screen animation
+
+- The home screen and every stacked screen (page / web view / notifications)
+  now render the **same `AppBar` component** at a fixed 52pt height, so the top
+  bar no longer shifts a few pixels while navigating.
+- Back navigation is a chevron inside that same bar (`showBack`), instead of a
+  separate, slightly shorter sub-header.
+- Screen transitions use `slide_from_right` (220ms) and the app-bar title
+  cross-fades/slides in, for a smoother feel.
+- App-bar icons dim on press for touch feedback.

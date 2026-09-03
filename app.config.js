@@ -212,8 +212,21 @@ module.exports = ({ config }) => {
   if (on('camera')) androidPermissions.push('CAMERA');
   if (on('microphone')) androidPermissions.push('RECORD_AUDIO');
   if (on('location')) androidPermissions.push('ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION');
-  if (on('storage') || on('photos'))
-    androidPermissions.push('READ_MEDIA_IMAGES', 'READ_EXTERNAL_STORAGE');
+  // Google Play requires a "Photo and Video Permissions" declaration for any app
+  // that ships READ_MEDIA_IMAGES / READ_EXTERNAL_STORAGE. Only request them when
+  // the CMS explicitly enables Photos/Storage; otherwise block them so libraries
+  // cannot inject them into the merged manifest and fail `fastlane supply`.
+  const wantsMedia = on('storage') || on('photos');
+  const MEDIA_PERMISSIONS = [
+    'READ_MEDIA_IMAGES',
+    'READ_MEDIA_VIDEO',
+    'READ_EXTERNAL_STORAGE',
+    'WRITE_EXTERNAL_STORAGE',
+  ];
+  if (wantsMedia) androidPermissions.push('READ_MEDIA_IMAGES', 'READ_EXTERNAL_STORAGE');
+  const blockedPermissions = wantsMedia
+    ? []
+    : MEDIA_PERMISSIONS.map((p) => 'android.permission.' + p);
 
   return Object.assign({}, base, {
     name: appName,
@@ -238,6 +251,7 @@ module.exports = ({ config }) => {
       package: env.EATAPP_ANDROID_PACKAGE || cmsApp.androidPackage || bundleId,
       versionCode: Number(buildNumber) || 1,
       permissions: androidPermissions,
+      ...(blockedPermissions.length ? { blockedPermissions: blockedPermissions } : {}),
       ...(icon
         ? {
             adaptiveIcon: {
