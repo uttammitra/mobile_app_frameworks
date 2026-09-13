@@ -31,7 +31,9 @@ export function TabBar() {
       setSheet({ title: item.submenu?.title ?? item.label, items: children });
       return;
     }
-    openNavTarget(router, item);
+    // Tabs replace the current screen (single instance, no stacking) and a tap
+    // on the already-active tab does nothing.
+    openNavTarget(router, item, { current: pathname, replace: true });
   };
 
   const routeActive = (item: NavItem) => {

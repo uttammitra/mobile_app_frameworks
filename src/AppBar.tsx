@@ -1,11 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ion } from './icons';
 import { useConfig, useTheme } from './ConfigProvider';
 import { openNavTarget } from './nav';
+import { useNotificationCenter } from './notifications';
 
 /**
  * App bar rendered 100% from the CMS payload:
@@ -25,6 +26,8 @@ export function AppBar({ title, showBack = false }: { title?: string; showBack?:
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
+  const { unreadCount } = useNotificationCenter();
 
   const design = (config?.design ?? {}) as Record<string, any>;
   const template = String(design.template ?? 'appbar');
@@ -92,6 +95,8 @@ export function AppBar({ title, showBack = false }: { title?: string; showBack?:
               style={({ pressed }) => [styles.btn, { opacity: pressed ? 0.55 : 1 }]}
               onPress={() => {
                 if (b.action === 'notifications' || b.route === '/notifications') {
+                  // Single instance: never stack a second notification screen.
+                  if (pathname === '/notifications') return;
                   router.push('/notifications');
                   return;
                 }
@@ -100,10 +105,24 @@ export function AppBar({ title, showBack = false }: { title?: string; showBack?:
                   Linking.openURL(route).catch(() => {});
                   return;
                 }
-                openNavTarget(router, { label: b.label, route, action: b.action, url: b.url });
+                openNavTarget(
+                  router,
+                  { label: b.label, route, action: b.action, url: b.url },
+                  { current: pathname },
+                );
               }}
             >
-              <Ionicons name={ion(b.icon)} size={22} color={fg} />
+              <View>
+                <Ionicons name={ion(b.icon)} size={22} color={fg} />
+                {(b.action === 'notifications' || b.route === '/notifications') &&
+                unreadCount > 0 ? (
+                  <View style={[styles.badge, { borderColor: bg }]}>
+                    <Text style={styles.badgeText}>
+                      {unreadCount > 9 ? '9+' : String(unreadCount)}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
             </Pressable>
           ))}
         </View>
@@ -126,4 +145,18 @@ const styles = StyleSheet.create({
   back: { marginLeft: -4, marginRight: 2 },
   title: { fontSize: 17, fontWeight: '700', flexShrink: 1 },
   btn: { padding: 2 },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -7,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
 });

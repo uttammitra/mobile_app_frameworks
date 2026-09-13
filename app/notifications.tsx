@@ -1,8 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { NotificationItem } from '../src/config';
 import { useConfig, useTheme } from '../src/ConfigProvider';
+import { useNotificationCenter } from '../src/notifications';
 
 function ago(iso?: string | null) {
   if (!iso) return '';
@@ -18,11 +18,15 @@ function ago(iso?: string | null) {
 }
 
 export default function Notifications() {
-  const { config, refresh } = useConfig();
+  const { refresh } = useConfig();
   const theme = useTheme();
   const [busy, setBusy] = useState(false);
+  const { history, ready, markAllRead } = useNotificationCenter();
 
-  const items = (config?.notifications?.history ?? []) as NotificationItem[];
+  // Opening the notification centre clears the badge.
+  useEffect(() => {
+    if (ready) markAllRead();
+  }, [ready, markAllRead]);
 
   const onRefresh = useCallback(async () => {
     setBusy(true);
@@ -33,14 +37,14 @@ export default function Notifications() {
   return (
     <FlatList
       style={{ backgroundColor: theme.background }}
-      contentContainerStyle={items.length ? styles.list : styles.empty}
-      data={items}
+      contentContainerStyle={history.length ? styles.list : styles.empty}
+      data={history}
       keyExtractor={(n, i) => n.id ?? String(i)}
       refreshControl={<RefreshControl refreshing={busy} onRefresh={onRefresh} tintColor={theme.primary} />}
       ListEmptyComponent={
         <View style={styles.emptyBox}>
           <Ionicons name="notifications-off-outline" size={34} color={theme.textSecondary} />
-          <Text style={{ color: theme.textSecondary, marginTop: 10 }}>No notifications yet.</Text>
+          <Text style={{ color: theme.textSecondary, marginTop: 10 }}>No new notifications</Text>
         </View>
       }
       renderItem={({ item }) => (
