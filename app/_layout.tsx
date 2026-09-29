@@ -8,6 +8,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppBar } from '../src/AppBar';
 import { ConfigProvider, useConfig, useTheme } from '../src/ConfigProvider';
 import { TabBar } from '../src/TabBar';
+import { UpdateGate } from '../src/UpdateGate';
+import { SplashOverlay } from '../src/SplashOverlay';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -68,7 +70,10 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ConfigProvider>
-        <Shell />
+        <UpdateGate>
+          <Shell />
+        </UpdateGate>
+        <SplashOverlay />
       </ConfigProvider>
     </SafeAreaProvider>
   );
