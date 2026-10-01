@@ -64,7 +64,9 @@ const bundleId = requestedBundleId || cmsApp.bundleId || 'app.eatapp.demo';
 if (requestedBundleId && cmsApp.bundleId && cmsApp.bundleId !== requestedBundleId) {
   console.warn('[eatapp] CMS config bundle mismatch; using ' + requestedBundleId + '.');
 }
-const appName = env.EATAPP_APP_NAME || cmsApp.name || 'EatApp';
+// The native label under the icon is distinct from the Expo project slug and
+// keeps the spaces supplied by the CMS (for example, "Jai Ho Indian").
+const appName = cmsApp.displayName || env.EATAPP_APP_NAME || cmsApp.name || 'EatApp';
 if (ON_EAS_STRICT && (!cmsApp.name || !exists('assets/generated/icon.png'))) {
   throw new Error(
     '[eatapp] CMS config/icon missing for bundle "' +
